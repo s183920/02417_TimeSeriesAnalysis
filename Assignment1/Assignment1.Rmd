@@ -7,6 +7,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 library(magrittr)
 library(ggplot2)
+source('functions.R')
 ```
 
 # Read data
@@ -29,23 +30,44 @@ p1<-ggplot(data, aes(x=year, y=nh))+
   theme(plot.title = element_text(size = 20, face = "bold", color = "darkgreen"),
         )
 p1
+ggsave(file="question_1.1.pdf", plot=p1, width=10, height=6)
 ```
 
 
 # Question 2
 ```{r}
-
+data['global_one_step_pred']=one_step_predictions(data$year, data$nh, 1)
+p1+geom_point(aes(y=global_one_step_pred),data=data)
 ```
 
 # Question 3
 
 ```{r}
-
+data['local_one_step_pred']=one_step_predictions(data$year, data$nh, 0.8)
+p1+geom_point(aes(y=local_one_step_pred),data=data)
 ```
 
 # Question 4
+Optimize for lambda
 ```{r}
+rel_err=c()
+lambdas=seq(0.01,1,by=0.01)
+for(lambda in lambdas) {
+  pred=one_step_predictions(data$year, data$nh, lambda)
+  rel_err = c(rel_err, relative_erros(data[3:164,'nh'],pred[3:164]))
+}
 
+f<-function(lambda,year, nh){
+  pred=one_step_predictions(year, nh, lambda)
+  relative_erros(data[3:164,'nh'],pred[3:164])
+}
+opt=optimize(f,lower=0,upper=1,year=data$year,nh=data$nh)
+plot(lambdas,rel_err,type='l')+
+abline(v=opt$minimum)
+```
+```{r}
+data['local_one_step_pred']=one_step_predictions(data$year, data$nh, opt$minimum)
+p1+geom_point(aes(y=local_one_step_pred),data=data)
 ```
 
 # Question 5
