@@ -10,6 +10,73 @@ library(ggplot2)
 source('functions.R')
 ```
 
+# Functions
+```{r}
+
+f <- function(j){
+  c(1,j)
+}
+
+FN <-function(N,lambda){
+  FN_ = 0
+  for (i in 0:(N-1)){
+    FN_ = FN_ + lambda^i*f(-i)%*%t(f(-i))
+  }
+  FN_
+  }
+  
+HN <-function(N,lambda,Y){
+  HN_ = 0
+  for (i in 0:(N-1)){
+    HN_ = HN_ + lambda^i*f(-i)*Y[N-i]
+  }
+  HN_
+}
+
+
+
+
+train_predictions <-function(year,nh,lambda, skip=5, step=1, testsize=5){
+  
+  #pred=matrix(c(NaN),nrow= length(year))
+  theta=matrix(c(NaN),nrow= length(year),ncol=2)
+  
+  N=skip
+
+  L=matrix(c(1,1,0,1),nrow=2)
+
+  FN_ = FN(N, lambda)
+  
+  hN = HN(N, lambda, nh)
+  
+  #theta=solve(FN_,hN)
+  theta[N+1,]=solve(FN_,hN)
+  #pred[N+1]=t(f(step))%*%theta
+
+  N=N+1
+  for (n in 1:(length(year)-skip-(testsize+1))){
+    FN_=FN_+lambda^N*f(-N)%*%t(f(-N));
+    hN=lambda*solve(L)%*%hN+c(1,0)*nh[N+1]
+    #theta=solve(FN_,hN)
+    #pred[N+1]=t(f(step))%*%theta
+    theta[N+1,]=solve(FN_,hN)
+    N=N+1
+  }
+  theta
+}
+  
+pred <- function(theta,step){
+  pred_=t(f(step))%*%t(theta)
+  t(pred_)
+}
+
+
+
+
+
+```
+
+
 # Read data
 ```{r}
 data <- read.table("A1_annual.txt", header = TRUE)
@@ -36,14 +103,21 @@ ggsave(file="question_1.1.pdf", plot=p1, width=10, height=6)
 
 # Question 2
 ```{r}
-data['global_one_step_pred']=one_step_predictions(data$year, data$nh, 1)
+theta=train_predictions(data$year, data$nh, 1, skip=5)
+data['global_one_step_pred']=pred(theta,step=1)
+
 p1+geom_point(aes(y=global_one_step_pred),data=data)
+pred(theta,step=1)
+
+```
+```{r}
+theta[length(theta)-5]
 ```
 
 # Question 3
 
 ```{r}
-data['local_one_step_pred']=one_step_predictions(data$year, data$nh, 0.8)
+data['local_one_step_pred']=train_predictions(data$year, data$nh, 0.8)[1]
 p1+geom_point(aes(y=local_one_step_pred),data=data)
 ```
 
