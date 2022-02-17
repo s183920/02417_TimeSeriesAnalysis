@@ -6,17 +6,29 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(magrittr)
+library(ggplot2)
 ```
 
 # Read data
 ```{r}
 data <- read.table("A1_annual.txt", header = TRUE)
+data['train']=c(replicate(164, 'Training data'),replicate(5, 'Test data'))
 head(data)
 ```
 
 # Question 1
 ```{r}
-
+p1<-ggplot(data, aes(x=year, y=nh))+
+  geom_point(aes(col=train))+
+  geom_line(col='black')+
+  labs(title="Temperature anomality for the Northern hemisphere", 
+       #subtitle="From A1_annual.txt dataset", 
+       x="year", y="Temperature", 
+       #caption="Question 1.1",
+       color = "")+
+  theme(plot.title = element_text(size = 20, face = "bold", color = "darkgreen"),
+        )
+p1
 ```
 
 
