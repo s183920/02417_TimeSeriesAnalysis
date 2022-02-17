@@ -7,26 +7,35 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 library(magrittr)
 library(ggplot2)
+library(dplyr)
 ```
 
 # Read data
 ```{r}
-data <- read.table("A1_annual.txt", header = TRUE)
-data['train']=c(replicate(164, 'Training data'),replicate(5, 'Test data'))
+data <- read.table("A1_annual.txt", header = TRUE) %>% 
+  mutate(data_type = c(replicate(164, 'Training'),replicate(5, 'Test')))
+# data['data_type']=c(replicate(164, 'Training'),replicate(5, 'Test'))
 head(data)
 ```
+
+```{r}
+min(data["year"])
+```
+
 
 # Question 1
 ```{r}
 p1<-ggplot(data, aes(x=year, y=nh))+
-  geom_point(aes(col=train))+
+  geom_point(aes(col=data_type))+
   geom_line(col='black')+
+  # geom_line(aes(col = train)) + 
   labs(title="Temperature anomality for the Northern hemisphere", 
        #subtitle="From A1_annual.txt dataset", 
        x="year", y="Temperature", 
        #caption="Question 1.1",
        color = "")+
-  theme(plot.title = element_text(size = 20, face = "bold", color = "darkgreen"),
+  theme(plot.title = element_text(size = 14, face = "bold", color = "darkgreen"),
+        legend.position = "right", legend.title = element_text("Data")
         )
 p1
 ```
