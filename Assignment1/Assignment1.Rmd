@@ -1,0 +1,16 @@
+---
+title: "Assignment1"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(magrittr)
+```
+
+# 
+```{r}
+data <- read.table("A1_annual.txt", header = TRUE)
+head(data)
+```
+
