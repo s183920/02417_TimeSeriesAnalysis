@@ -8,9 +8,37 @@ knitr::opts_chunk$set(echo = TRUE)
 library(magrittr)
 ```
 
-# 
+# Read data
 ```{r}
 data <- read.table("A1_annual.txt", header = TRUE)
 head(data)
 ```
+
+# Question 1
+```{r}
+
+```
+
+
+# Question 2
+```{r}
+
+```
+
+# Question 3
+
+```{r}
+
+```
+
+# Question 4
+```{r}
+
+```
+
+# Question 5
+```{r}
+
+```
+
 
