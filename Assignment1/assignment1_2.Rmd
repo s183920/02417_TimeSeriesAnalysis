@@ -172,22 +172,22 @@ cupr = forecast+conf_uncertainty
 
 
 #plot of one step predictions
-plot_global_one_step <- plot_data +
+plot_one_step <- plot_data +
   geom_point(aes(x=data$year[2:165], y=pred), color='red',size=0.2)+
   geom_line( aes(x=data$year[2:165], y=pred), color='red',size=0.2)
-#ggsave(file="global.pdf", plot=plot_global_one_step, width=8, height=5)
+#ggsave(file="global.pdf", plot=plot_one_step, width=8, height=5)
 
 #plot of one step predictions errors
-plot_global_pred_err=ggplot()+
+plot_pred_err=ggplot()+
   geom_hline(yintercept = 0)+
   geom_point(aes(x=data$year[2:164],y=pred_err),pch=1)+
   labs(title="One step prediction errors - global Model",
        x="year", y="error")+
   theme(plot.title = element_text(size = 20,face = "bold",color = "darkgreen"))
-#ggsave(file="resplotglobal.pdf", plot=plot_global_pred_err, width=10, height=6)
+#ggsave(file="resplotglobal.pdf", plot=plot_pred_err, width=10, height=6)
 
 #plot of forecasted values
-plot_global_forecast <- plot_global_one_step +
+plot_forecast <- plot_one_step +
   geom_point(aes(x=data$year[165:169], y=forecast), 
              color='black',size=0.2)+
   geom_line( aes(x=data$year[165:169], y=forecast), color='black',
@@ -197,10 +197,10 @@ plot_global_forecast <- plot_global_one_step +
   geom_line(aes(x=data$year[165:169],y=clwr),col='green',size=1)+
   geom_line(aes(x=data$year[165:169],y=cupr),col='green',size=1)+
   labs(title='Forecasting temperature anomality using Global Trend Model')
-#ggsave(file="global.pdf", plot=plot_global_forecast, width=8, height=5)
+#ggsave(file="global.pdf", plot=plot_forecast, width=8, height=5)
 
 #close up plot of forecasted values
-plot_global_close<-plot_data+
+plot_close<-plot_data+
   geom_point(aes(x=data$year[2:165], y=pred), color='red')+
   geom_line( aes(x=data$year[2:165], y=pred), color='red')+
   geom_point(aes(x=data$year[165:169],y=forecast),col='black')+
@@ -210,11 +210,11 @@ plot_global_close<-plot_data+
   geom_line(aes(x=data$year[165:169],y=clwr),col='green')+
   geom_line(aes(x=data$year[165:169],y=cupr),col='green')+
   xlim(2000, 2018)+ylim(-0.4,1.2)+labs(title="Forecasting using Global Trend Model")
-#ggsave(file="global2.pdf", plot=plot_global_close, width=5, height=4)
-plot_global_one_step
-plot_global_pred_err
-plot_global_forecast
-plot_global_close
+#ggsave(file="global2.pdf", plot=plot_close, width=5, height=4)
+plot_one_step
+plot_pred_err
+plot_forecast
+plot_close
 ```
 # Question 4
 Optimize for lambda
