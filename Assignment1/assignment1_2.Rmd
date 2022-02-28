@@ -44,7 +44,7 @@ calculate_theta<-function(N, Y, lambda=1){
   theta=theta=matrix(0,nrow=2,ncol=len)
   
   #initialise FN and hN and calculate first theta
-  #if N=1 the estimate of theta is just [Y_1, 0]
+  #if N=1 the estimate of theta is just [Y_1, 0] -> from where??? WLS?
   hn=update_h(N[1],Y,lambda=lambda)
   Fn=update_F(N[1],lambda=lambda)
   if(N[1]==1){ theta[,1]=hn }
@@ -73,10 +73,11 @@ make_predictions <- function(N,Y, lambda=1,step=1){
 
 
 ```
+
 # Functions for confidence intervals
 ```{r}
 ##### confidence intervals  
-sigma2_hat <- function(N,theta,Y){
+sigma2_hat <- function(N,theta,Y){ # local estimator??? use residuals to tell whether global or local estiamte of variance should be used
   y=Y[1:N]
   x=cbind(1,(-N+1):0)
   tmp=y-x%*%theta
