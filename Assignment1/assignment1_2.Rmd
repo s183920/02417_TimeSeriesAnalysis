@@ -75,51 +75,57 @@ make_predictions <- function(N,Y, lambda=1,step=1){
 ```
 # Functions for confidence intervals
 ```{r}
-##### confidence intervals  
-sigma2_hat <- function(N,theta,Y){
-  y=Y[1:N]
-  x=cbind(1,(-N+1):0)
-  tmp=y-x%*%theta
-  c(t(tmp)%*%tmp/(N-2))
-}
-sigma2_hat_local <- function(N,theta,Y,lambda){
-  p=2
-  x=cbind(1,(-N+1):0)
-  T_=0
-  sigma=c()
-  for(j in 0:(N-1)){
-    T_=T_+lambda^j
-    sigma=c((lambda^j), sigma)
+sigma2_hat <- function(N,theta,Y,lambda,p=2,lg='local',n=5){
+  if (lambda==1){
+    #estimating sigma2 as σ^2 = ε^T ε/(N −p)
+    y=Y[1:N]
+    x=cbind(1,(-N+1):0)
+    eps=y-x%*%theta #residuals using theta_N
+    sigma2=diag(t(eps)%*%eps/(N-p))
   }
-  sigma=diag(sigma)
-  c(1/(T_-p)*t(Y-x%*%theta)%*%sigma%*%(Y-x%*%theta))
+  else if (lg=='local'){
+    #estimating sigma2 using local estimater
+    y=Y[1:N]
+    x=cbind(1,(-N+1):0)
+    eps=y-x%*%theta #residuals using theta_N
+    T_=0
+    Sigma_inv=matrix(0,nrow=N,ncol=N)
+    for(j in 0:(N-1)){
+      T_=T_+lambda^j
+      Sigma_inv[j+1,j+1]=lambda^((N-1)-j)
+    }
+    sigma2=c(1/(T_-p)*t(y-x%*%theta)%*%Sigma_inv%*%(y-x%*%theta))
+  }
+  else if (lg=='global'){
+    sigma2=0
+    for (j in (n+1):N){
+      pred = make_predictions(j-1,Y, lambda=lambda,step=1)
+      F_ = update_F(j-1, lambda=lambda)
+      sigma2 = sigma2 + (Y[j]-pred)^2/(1+t(f(1)%*%solve(F_)%*%f(1)))
+    }
+    sigma2=sigma2/(N-n)
+  }
+  as.numeric(sigma2)
 }
-var_pred_err_local <- function(N,theta,Y, lambda,step,type='pred'){
-  f_=rbind(1,step)
-  FN=update_F(N,lambda=lambda)
+
+
+var_pred_err <- function(N,theta,Y, lambda,step,type='pred',p=2,lg='local'){
+  f_ = rbind(1,step)
+  FN = update_F(N,lambda=lambda)
+  s2 = sigma2_hat(N,theta,Y,lambda,p=p,lg=lg)
+  tmp = diag(t(f_)%*%solve(FN)%*%f_) #diag is nescesary then step is a list
   if (type=='pred'){
-    diag(sigma2_hat_local(N,theta,Y,lambda)*(1+t(f_)%*%solve(FN)%*%f_))
+    var=s2*(1+tmp)
   }else if (type=='conf'){
-    diag(sigma2_hat_local(N,theta,Y,lambda)*(t(f_)%*%solve(FN)%*%f_))
+    var=s2*(tmp)
   }
+  var
 }
 
-pred_interval_local <- function(N,theta,Y, lambda,step, conf=0.95,type='pred'){
-  qt((1+conf)/2,df=N-2)*sqrt(var_pred_err_local(N,theta,Y,lambda, step,type))
-}
-
-
-var_pred_err <- function(N,theta,Y, lambda,step,type='pred'){
-  f_=rbind(1,step)
-  FN=update_F(N,lambda=lambda)
-  if (type=='pred'){
-    diag(sigma2_hat(N,theta,Y)*(1+t(f_)%*%solve(FN)%*%f_))
-  }else if (type=='conf'){
-    diag(sigma2_hat(N,theta,Y)*(t(f_)%*%solve(FN)%*%f_))
-  }
-}
-pred_interval <- function(N,theta,Y, lambda,step, conf=0.95,type='pred'){
-  qt((1+conf)/2,df=N-2)*sqrt(var_pred_err(N,theta,Y,lambda, step,type))
+pred_interval <- function(N,theta,Y, lambda,step, conf=0.95,type='pred',p=2,lg='local'){
+  theta = calculate_theta(N,Y=data$nh, lambda=lambda)
+  var = var_pred_err(N,theta,Y,lambda, step,type=type, p=p,lg=lg)
+  qt((1+conf)/2,df=N-p)*sqrt(var)
 }
 
 ```
@@ -152,18 +158,12 @@ pred_err = data$nh[2:164]-pred[-164] #Y_N+1-Y_N+1|N (Y_165 isn't training data)
 forecast = make_predictions(N=164,Y=data$nh, lambda=lambda,step=1:5)$'164' #Y_N+l|N
 
 #confidence intervals upper an lower bounds is calculated
-theta_164=calculate_theta(N=164,Y=data$nh, lambda=lambda)
-if (lambda==1){
-  pred_uncertainty = pred_interval(N=164,theta=theta_164,Y=data$nh, 
-                                   lambda=lambda,step=1:5,type='pred')
-  conf_uncertainty = pred_interval(N=164,theta=theta_164,Y=data$nh, 
-                                   lambda=lambda,step=1:5,type='conf')
-}else{
-  pred_uncertainty = pred_interval_local(N=164,theta=theta_164,Y=data$nh[1:164], 
-                                   lambda=lambda,step=1:5,type='pred')
-  conf_uncertainty = pred_interval_local(N=164,theta=theta_164,Y=data$nh[1:164], 
-                                   lambda=lambda,step=1:5,type='conf')
-}
+pred_uncertainty = pred_interval(N=164,Y=data$nh,
+                                 lambda=lambda,step=1:5,type='pred',lg='global')
+conf_uncertainty = pred_interval(N=164,Y=data$nh,
+                                 lambda=lambda,step=1:5,type='conf',lg='global')
+
+
 plwr = forecast-pred_uncertainty
 pupr = forecast+pred_uncertainty
 clwr = forecast-conf_uncertainty
@@ -228,15 +228,21 @@ prediction_error_SSE <- function(lambda,N,Y,step=1){
 
 ##### optimering af lambda
 sse_err=c()
-lambdas=seq(0.01,1,by=0.01)
+lambdas=seq(0.001,1,by=0.001)
 N=6:163  #what residuals to count
 for(lambda in lambdas) {
   sse_err=c(sse_err,prediction_error_SSE(lambda,N,data$nh))
 }
 
 opt=optimize(prediction_error_SSE,lower=0,upper=1,Y=data$nh,N=N)
-plot(lambdas,sse_err,type='l',main=opt$minimum)+
-abline(v=opt$minimum)
-
+plot_optimal_lambda <- ggplot()+
+  geom_line(aes(x=lambdas,y=sse_err))+
+  geom_point(aes(x=opt$min,y=opt$objective),color='red',pch=4,size=2,stroke = 2)+
+  labs(title=expression(paste("Optimal Value is obtained for ", lambda, " = 0.84478")),
+       x=expression(lambda), y="SSE of one step predictions")+
+  theme(plot.title = element_text(size = 20,face = "bold",color = "darkgreen"))
+  #geom_vline(xintercept=opt$minimum)
+plot_optimal_lambda
+ggsave(file="optimal.pdf", plot=plot_optimal_lambda, width=8, height=5)
 ```
 
