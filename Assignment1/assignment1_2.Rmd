@@ -155,7 +155,7 @@ plot_data
 
 # Question 2-3 - global and local model (lambda=1 and lambda=0.8)
 ```{r}
-lambda=0.8
+lambda=0.8 # <- change to get the corresponding plots
 #global one step predictions for the test data
 pred = as.numeric(make_predictions(N=1:164,Y=data$nh, lambda=lambda,step=1))  #Y_N+1|N
 pred_err = data$nh[2:164]-pred[-164] #Y_N+1-Y_N+1|N (Y_165 isn't training data)
@@ -179,7 +179,7 @@ cupr = forecast+conf_uncertainty
 plot_one_step <- plot_data +
   geom_point(aes(x=data$year[2:165], y=pred), color='red',size=0.2)+
   geom_line( aes(x=data$year[2:165], y=pred), color='red',size=0.2)
-ggsave(file=paste("one_step_", lambda, ".pdf"), plot=plot_one_step, width=8, height=5)
+ggsave(file=paste("one_step_lambda", lambda, ".pdf"), plot=plot_one_step, width=8, height=5)
 
 #plot of one step predictions errors
 plot_pred_err=ggplot()+
@@ -188,7 +188,7 @@ plot_pred_err=ggplot()+
   labs(title="One step prediction errors - global Model",
        x="year", y="error")+
   theme(plot.title = element_text(size = 20,face = "bold",color = "darkgreen"))
-ggsave(file=paste("resplot", lambda, ".pdf"), plot=plot_pred_err, width=10, height=6)
+ggsave(file=paste("resplot_lambda", lambda, ".pdf"), plot=plot_pred_err, width=10, height=6)
 
 #plot of forecasted values
 plot_forecast <- plot_one_step +
@@ -201,7 +201,7 @@ plot_forecast <- plot_one_step +
   geom_line(aes(x=data$year[165:169],y=clwr),col='green',size=1)+
   geom_line(aes(x=data$year[165:169],y=cupr),col='green',size=1)+
   labs(title='Forecasting temperature anomality using Global Trend Model')
-ggsave(file=paste("forecast_", lambda, ".pdf"), plot=plot_forecast, width=8, height=5)
+ggsave(file=paste("forecast_lambda", lambda, ".pdf"), plot=plot_forecast, width=8, height=5)
 
 #close up plot of forecasted values
 plot_close<-plot_data+
@@ -214,7 +214,7 @@ plot_close<-plot_data+
   geom_line(aes(x=data$year[165:169],y=clwr),col='green')+
   geom_line(aes(x=data$year[165:169],y=cupr),col='green')+
   xlim(2000, 2018)+ylim(-0.4,1.2)+labs(title="Forecasting using Global Trend Model")
-ggsave(file=paste("close_",lambda,".pdf", sep = ""), plot=plot_close, width=5, height=4)
+ggsave(file=paste("close_lambda",lambda,".pdf", sep = ""), plot=plot_close, width=5, height=4)
 
 plot_one_step
 plot_pred_err
