@@ -152,16 +152,26 @@ plot_data
 # Question 2-3 - global and local model (lambda=1 and lambda=0.8)
 ```{r}
 lambda=0.8
+conf_type='local'
 #global one step predictions for the test data
 pred = as.numeric(make_predictions(N=1:164,Y=data$nh, lambda=lambda,step=1))  #Y_N+1|N
 pred_err = data$nh[2:164]-pred[-164] #Y_N+1-Y_N+1|N (Y_165 isn't training data)
-forecast = make_predictions(N=164,Y=data$nh, lambda=lambda,step=1:5)$'164' #Y_N+l|N
+pred_int = c()
+for (n in 3:164){
+  pred_int=c(pred_int,pred_interval(N=n,Y=data$nh,lambda=lambda,step=1,type='pred',lg=conf_type))
+}
 
-#confidence intervals upper an lower bounds is calculated
+
+
+
+
+
+#forecast and confintervals
+forecast = make_predictions(N=164,Y=data$nh, lambda=lambda,step=1:5)$'164' #Y_N+l|N
 pred_uncertainty = pred_interval(N=164,Y=data$nh,
-                                 lambda=lambda,step=1:5,type='pred',lg='global')
+                                 lambda=lambda,step=1:5,type='pred',lg=conf_type)
 conf_uncertainty = pred_interval(N=164,Y=data$nh,
-                                 lambda=lambda,step=1:5,type='conf',lg='global')
+                                 lambda=lambda,step=1:5,type='conf',lg=conf_type)
 
 
 plwr = forecast-pred_uncertainty
@@ -172,9 +182,26 @@ cupr = forecast+conf_uncertainty
 
 
 #plot of one step predictions
-plot_one_step <- plot_data +
-  geom_point(aes(x=data$year[2:165], y=pred), color='red',size=0.2)+
-  geom_line( aes(x=data$year[2:165], y=pred), color='red',size=0.2)
+ymin=pred[3:164]-pred_int
+ymax=pred[3:164]+pred_int
+plot_one_step <-  ggplot()+ 
+  geom_ribbon(aes(ymin=ymin,ymax=ymax,x=data$year[4:165]), fill="blue", alpha=0.3)+
+  geom_ribbon(aes(ymin=plwr,ymax=pupr,x=data$year[165:169]), fill="blue", alpha=0.3)+
+  geom_line(aes(x=data$year[165:169],y=plwr),col='blue',alpha=0.5)+
+  geom_line(aes(x=data$year[165:169],y=pupr),col='blue',alpha=0.5)+
+  geom_line(aes(x=data$year[4:165],y=ymin),col='blue',alpha=0.5)+
+  geom_line(aes(x=data$year[4:165],y=ymax),col='blue',alpha=0.5)+
+  geom_point(data=data,aes(x=year, y=nh,color=data_type)) +
+  geom_line(data=data,aes(x=year, y=nh),col='black') +
+  geom_point(aes(x=data$year[2:165], y=pred), color='red',size=0.75)+ #size=0.2
+  geom_line( aes(x=data$year[2:165], y=pred), color='red',size=0.4)+#size=0.2
+  geom_point(aes(x=data$year[165:169], y=forecast), color='black',size=0.75)+#size=0.2
+  geom_line( aes(x=data$year[165:169], y=forecast), color='black',size=0.4)+#size=0.2
+  labs(title="Temperature anomality for the Northern hemisphere", 
+           x="year", y="Temperature",  color = "Data") +
+  theme(plot.title = element_text(size = 14, face = "bold", 
+            color = "darkgreen"), legend.position = "right")+
+  scale_color_manual(name = "Data", values = c("Test" = "#F8766D", "Training" = "turquoise", "1 step predictions"="red","1-5 step forecasts"='black'))
 #ggsave(file="global.pdf", plot=plot_one_step, width=8, height=5)
 
 #plot of one step predictions errors
@@ -188,32 +215,17 @@ plot_pred_err=ggplot()+
 
 #plot of forecasted values
 plot_forecast <- plot_one_step +
-  geom_point(aes(x=data$year[165:169], y=forecast), 
-             color='black',size=0.2)+
-  geom_line( aes(x=data$year[165:169], y=forecast), color='black',
-             size=0.2)+
-  geom_line(aes(x=data$year[165:169],y=plwr),col='red',size=1)+
-  geom_line(aes(x=data$year[165:169],y=pupr),col='red',size=1)+
-  geom_line(aes(x=data$year[165:169],y=clwr),col='green',size=1)+
-  geom_line(aes(x=data$year[165:169],y=cupr),col='green',size=1)+
+  geom_point(aes(x=data$year[165:169], y=forecast), color='black',size=0.2)+
+  geom_line( aes(x=data$year[165:169], y=forecast), color='black',ize=0.2)+
   labs(title='Forecasting temperature anomality using Global Trend Model')
-#ggsave(file="global.pdf", plot=plot_forecast, width=8, height=5)
+ggsave(file="global.pdf", plot=plot_forecast, width=8, height=5)
 
-#close up plot of forecasted values
-plot_close<-plot_data+
-  geom_point(aes(x=data$year[2:165], y=pred), color='red')+
-  geom_line( aes(x=data$year[2:165], y=pred), color='red')+
-  geom_point(aes(x=data$year[165:169],y=forecast),col='black')+
-  geom_line(aes(x=data$year[165:169],y=forecast),col='black')+
-  geom_line(aes(x=data$year[165:169],y=plwr),col='red')+
-  geom_line(aes(x=data$year[165:169],y=pupr),col='red')+
-  geom_line(aes(x=data$year[165:169],y=clwr),col='green')+
-  geom_line(aes(x=data$year[165:169],y=cupr),col='green')+
-  xlim(2000, 2018)+ylim(-0.4,1.2)+labs(title="Forecasting using Global Trend Model")
-#ggsave(file="global2.pdf", plot=plot_close, width=5, height=4)
+
+plot_close=plot_one_step+xlim(2000, 2018)+ylim(-0.4,1.2)
+ggsave(file="global2.pdf", plot=plot_close, width=5, height=4)
+
 plot_one_step
 plot_pred_err
-plot_forecast
 plot_close
 ```
 # Question 4
