@@ -44,7 +44,7 @@ calculate_theta<-function(N, Y, lambda=1){
   theta=theta=matrix(0,nrow=2,ncol=len)
   
   #initialise FN and hN and calculate first theta
-  #if N=1 the estimate of theta is just [Y_1, 0]
+  #if N=1 the estimate of theta is just [Y_1, 0] -> from where??? WLS?
   hn=update_h(N[1],Y,lambda=lambda)
   Fn=update_F(N[1],lambda=lambda)
   if(N[1]==1){ theta[,1]=hn }
@@ -73,6 +73,7 @@ make_predictions <- function(N,Y, lambda=1,step=1){
 
 
 ```
+
 # Functions for confidence intervals
 ```{r}
 sigma2_hat <- function(N,theta,Y,lambda,p=2,lg='local',n=5){
@@ -129,6 +130,7 @@ pred_interval <- function(N,theta,Y, lambda,step, conf=0.95,type='pred',p=2,lg='
 }
 
 ```
+
 # Read data
 ```{r}
 keeps <- c('year','nh')
@@ -137,6 +139,7 @@ data <- read.table("A1_annual.txt", header = TRUE)[keeps]  %>%
 head(data)
 tail(data)
 ```
+
 # Question 1 - data visualisation
 ```{r}
 plot_data <- ggplot() +
@@ -149,10 +152,11 @@ plot_data <- ggplot() +
 ggsave(file="data.pdf", plot=plot_data , width=8, height=5)
 plot_data 
 ```
+
 # Question 2-3 - global and local model (lambda=1 and lambda=0.8)
 ```{r}
-lambda=0.8
 conf_type='local'
+lambda=0.8 # <- change to get the corresponding plots
 #global one step predictions for the test data
 pred = as.numeric(make_predictions(N=1:164,Y=data$nh, lambda=lambda,step=1))  #Y_N+1|N
 pred_err = data$nh[2:164]-pred[-164] #Y_N+1-Y_N+1|N (Y_165 isn't training data)
@@ -211,7 +215,7 @@ plot_pred_err=ggplot()+
   labs(title="One step prediction errors - global Model",
        x="year", y="error")+
   theme(plot.title = element_text(size = 20,face = "bold",color = "darkgreen"))
-#ggsave(file="resplotglobal.pdf", plot=plot_pred_err, width=10, height=6)
+ggsave(file=paste("resplot_lambda", lambda, ".pdf"), plot=plot_pred_err, width=10, height=6)
 
 #plot of forecasted values
 plot_forecast <- plot_one_step +
@@ -228,6 +232,11 @@ plot_one_step
 plot_pred_err
 plot_close
 ```
+```{r}
+paste(lambda, "hej", sep = "")
+```
+
+
 # Question 4
 Optimize for lambda
 ```{r}
