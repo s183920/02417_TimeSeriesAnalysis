@@ -1,0 +1,29 @@
+---
+title: "Assignment 2)  ARMA Processes and Seasonal Processes"
+output: html_notebook
+---
+
+# Initialize
+```{r}
+rm(list = ls());
+graphics.off();
+cat("\014");
+knitr::opts_chunk$set(echo = TRUE)
+library(magrittr)
+library(ggplot2)
+library(dplyr)
+```
+
+# Question 2.2
+```{r}
+t <- c("2015Q2", "2015Q3", "2015Q4", "2016Q1", "2016Q2", "2016Q3", "2016Q4", "2017Q1")
+CPI <- c(237.9, 236.5, 238.1, 241, 241.4, 241.4, 243.8, 245.0)
+
+df <- data.frame(t, CPI)
+df
+
+```
+
+
+```
+
