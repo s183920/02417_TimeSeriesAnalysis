@@ -23,7 +23,21 @@ df <- data.frame(t, CPI)
 df
 
 ```
-
-
+```{r}
+library(xtable)
 ```
+
+
+# Question 2.4
+(mixed) seasonal model (p, 0, q)×(P, 0, Q)
+```{r}
+set.seed(123)
+#2.4.1
+layout(matrix(c(1,1,2,3), 2, 2, byrow = TRUE))
+sim1 = arima.sim(model=list(ar=c(0.8)),n=200)
+plot(sim1,ylab='Y_t')
+acf(sim1,lag.max = 50, main=NA, panel.first = abline(v=c(12*(1:(200/12))), lty=2, col='blue'))
+pacf(sim1,lag.max = 50, main=NA, panel.first = abline(v=c(12*(1:(200/12))),lty=2, col='blue'))
+```
+
 
