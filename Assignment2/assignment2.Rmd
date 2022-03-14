@@ -51,10 +51,14 @@ pacf(sim1,lag.max = 50, main=NA, panel.first = abline(v=c(12*(1:(200/12))),lty=2
 
 ```{r}
 Y = portes::varima.sim(n=5000, model = list(ar = -0.8, period = 12))
+
+pdf("arma1.pdf")
 par(mfrow=c(1,2))
 
 acf(Y,main="ACF")
-pacf(Y,main="PACF")
+pacf(Y,main="PACF", ylim = c(0.1, -0.1))
+
+dev.off()
 ```
 
 
@@ -62,10 +66,14 @@ pacf(Y,main="PACF")
 
 ```{r}
 Y = portes::varima.sim(n=5000, model = list(sar = 0.8, period = 12))
+
+# pdf("arma2.pdf")
 par(mfrow=c(1,2))
 
 acf(Y,main="ACF")
 pacf(Y,main="PACF")
+
+# dev.off()
 ```
 
 
@@ -73,30 +81,42 @@ pacf(Y,main="PACF")
 
 ```{r}
 Y = portes::varima.sim(n=5000, model = list(ar = -0.9, sma = 0.7, period = 12))
+
+pdf("arma3.pdf")
 par(mfrow=c(1,2))
 
 acf(Y,main="ACF")
 pacf(Y,main="PACF")
+
+dev.off()
 ```
 
 ### Model 4: AR(1) and seasonal AR(1) 
 
 ```{r}
 Y = portes::varima.sim(n=5000, model = list(ar = 0.6, sar = 0.8, period = 12))
+
+pdf("arma4.pdf")
 par(mfrow=c(1,2))
 
 acf(Y,main="ACF")
 pacf(Y,main="PACF")
+
+dev.off()
 ```
 
 ### Model 5: MA(1) and seasonal MA(1)
 
 ```{r}
 Y = portes::varima.sim(n=5000, model = list(ma = -0.4, sma = 0.8, period = 12))
+
+pdf("arma5.pdf")
 par(mfrow=c(1,2))
 
 acf(Y,main="ACF")
 pacf(Y,main="PACF")
+
+dev.off()
 ```
 
 
@@ -104,11 +124,14 @@ pacf(Y,main="PACF")
 
 ```{r}
 Y = portes::varima.sim(n=5000, model = list(ma = 0.4, sar = -0.7, period = 12))
-p  <- par(mfrow=c(1,2))
+
+pdf("arma6.pdf")
+par(mfrow=c(1,2))
 
 acf(Y,main="ACF")
 pacf(Y,main="PACF")
 
 
-
+# ggsave(file="arma6.pdf", plot=p, width=5, height=4)
+dev.off()
 ```
