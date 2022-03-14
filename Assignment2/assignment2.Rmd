@@ -12,6 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(magrittr)
 library(ggplot2)
 library(dplyr)
+library(forecast)
 ```
 
 # Question 2.2
@@ -41,3 +42,73 @@ pacf(sim1,lag.max = 50, main=NA, panel.first = abline(v=c(12*(1:(200/12))),lty=2
 ```
 
 
+
+
+## With portes library
+
+
+### Model 1: AR(1)
+
+```{r}
+Y = portes::varima.sim(n=5000, model = list(ar = -0.8, period = 12))
+par(mfrow=c(1,2))
+
+acf(Y,main="ACF")
+pacf(Y,main="PACF")
+```
+
+
+### Model 2: seasonal AR(1)
+
+```{r}
+Y = portes::varima.sim(n=5000, model = list(sar = 0.8, period = 12))
+par(mfrow=c(1,2))
+
+acf(Y,main="ACF")
+pacf(Y,main="PACF")
+```
+
+
+### Model 3: AR(1) with seasonal MA(1)
+
+```{r}
+Y = portes::varima.sim(n=5000, model = list(ar = -0.9, sma = 0.7, period = 12))
+par(mfrow=c(1,2))
+
+acf(Y,main="ACF")
+pacf(Y,main="PACF")
+```
+
+### Model 4: AR(1) and seasonal AR(1) 
+
+```{r}
+Y = portes::varima.sim(n=5000, model = list(ar = 0.6, sar = 0.8, period = 12))
+par(mfrow=c(1,2))
+
+acf(Y,main="ACF")
+pacf(Y,main="PACF")
+```
+
+### Model 5: MA(1) and seasonal MA(1)
+
+```{r}
+Y = portes::varima.sim(n=5000, model = list(ma = -0.4, sma = 0.8, period = 12))
+par(mfrow=c(1,2))
+
+acf(Y,main="ACF")
+pacf(Y,main="PACF")
+```
+
+
+### Model 6: MA(1) with seasonal AR(1)
+
+```{r}
+Y = portes::varima.sim(n=5000, model = list(ma = 0.4, sar = -0.7, period = 12))
+p  <- par(mfrow=c(1,2))
+
+acf(Y,main="ACF")
+pacf(Y,main="PACF")
+
+
+
+```
