@@ -1,0 +1,80 @@
+---
+title: "Assigment 2"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(magrittr)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+```
+
+
+# Question 1: Stability
+
+Illustration of the real root values compared to the value of phi2, stability is found for -2/3 < phi < 1/36
+
+```{r}
+
+roots <- function(phi){
+  1/6*(1+sqrt(as.complex(1-36*phi))*c(-1,1))
+}
+
+data <- c(seq(-1, 1, 1e-2)) %>% 
+  rbind(sapply(., FUN = roots)) %>% 
+  t() %>% 
+  data.frame() %>% 
+  setNames(c("phi", "root1", "root2")) %>% 
+  mutate(phi = Re(phi))
+
+data
+
+
+p <- data %>%   mutate(Real = Re(root1), Imaginary =  Im(root1)) %>% 
+  gather("type", "root1", Real, Imaginary) %>% 
+  ggplot() +
+  geom_line(aes(phi, root1, col = type)) +
+  # geom_hline(yintercept = c(-1,1), linetype = "solid" ) +
+  # geom_vline(xintercept = 1/36, linetype = "dashed" ) +
+  # geom_vline(xintercept = -2/3, linetype = "dashed" ) +
+  labs(x = expression(paste(phi[2])), y = "Root values")
+
+p2 <- data %>%   mutate(Real = Re(root2), Imaginary =  Im(root2)) %>% 
+  gather("type", "root2", Real, Imaginary) %>% 
+  ggplot() +
+  geom_line(aes(phi, root2, col = type)) +
+  labs(x = expression(paste(phi[2])), y = "Root values")
+
+
+p
+p2
+
+
+data %>%   mutate(Real_1 = Re(root1), Imaginary_1 =  Im(root1)) %>% 
+  mutate(Real_2 = Re(root2), Imaginary_2 =  Im(root2)) %>% 
+  gather("type", "root", Real_1, Imaginary_1, Real_2, Imaginary_2) %>% 
+  separate(type, into = c("type", "root_num"), sep = "_") %>% 
+  # filter(root_num == 1) %>% 
+  ggplot() +
+  geom_line(aes(phi, root, col = type)) +
+  labs(x = expression(paste(phi[2])), y = "Root values") +
+  facet_grid(. ~ root_num)
+
+```
+
+```{r}
+data <- c(seq(-1, 1, 1e-2)) %>% 
+  rbind(sapply(., FUN = roots)) %>% 
+  t() %>% 
+  data.frame() %>% 
+  setNames(c("phi", "root1", "root2")) %>% 
+  mutate(phi = Re(phi))
+
+data %>% ggplot() +
+  geom_line(aes(phi, Mod(root1))) +
+  geom_line(aes(phi, Re(root1))) +
+  geom_line(aes(phi, Im(root1)))
+```
+
