@@ -52,7 +52,11 @@ pacf(sim1,lag.max = 50, main=NA, panel.first = abline(v=c(12*(1:(200/12))),lty=2
 ```{r}
 Y = portes::varima.sim(n=5000, model = list(ar = -0.8, period = 12))
 
-pdf("arma1.pdf")
+pdf("arma1_process.pdf")
+# expression(paste("Realisation of a ", "(1,0,0)", x, "(0,0,0)"[12], " seasonal process with ", phi[1], " = -0.8"))
+plot(Y[1:100], ylab= expression(Y[t]), xlab = "Time", main = "Realization of stochastic process", type = "l")
+
+pdf("arma1_acf.pdf")
 par(mfrow=c(1,2))
 
 acf(Y,main="ACF")
@@ -67,13 +71,17 @@ dev.off()
 ```{r}
 Y = portes::varima.sim(n=5000, model = list(sar = 0.8, period = 12))
 
-# pdf("arma2.pdf")
+pdf("arma2_process.pdf")
+# expression(paste("Realisation of a ", "(0,0,0)", x, "(1,0,0)"[12], " seasonal process with ", Phi[1], " = 0.8"))
+plot(Y[1:100], ylab= expression(Y[t]), xlab = "Time", main = "Realization of stochastic process", type = "l")
+
+pdf("arma2_acf.pdf")
 par(mfrow=c(1,2))
 
 acf(Y,main="ACF")
 pacf(Y,main="PACF")
 
-# dev.off()
+dev.off()
 ```
 
 
@@ -82,11 +90,15 @@ pacf(Y,main="PACF")
 ```{r}
 Y = portes::varima.sim(n=5000, model = list(ar = -0.9, sma = 0.7, period = 12))
 
-pdf("arma3.pdf")
+pdf("arma3_process.pdf")
+# expression(paste("Realisation of a ", "(1,0,0)", x, "(0,0,1)"[12], " seasonal process with ", phi[1], " = -0.9 and ", Theta[1], " = 0.7"))
+plot(Y[1:100], ylab= expression(Y[t]), xlab = "Time", main = "Realization of stochastic process", type = "l")
+
+pdf("arma3_acf.pdf")
 par(mfrow=c(1,2))
 
 acf(Y,main="ACF")
-pacf(Y,main="PACF")
+pacf(Y,main="PACF", ylim = c(-0.5, 0.2))
 
 dev.off()
 ```
@@ -96,7 +108,11 @@ dev.off()
 ```{r}
 Y = portes::varima.sim(n=5000, model = list(ar = 0.6, sar = 0.8, period = 12))
 
-pdf("arma4.pdf")
+pdf("arma4_process.pdf")
+#  expression(paste("Realisation of a ", "(1,0,0)", x, "(1,0,0)"[12], " seasonal process with ", phi[1], " = 0.6 and ", Phi[1], " = 0.8"))
+plot(Y[1:100], ylab= expression(Y[t]), xlab = "Time", main = "Realization of stochastic process", type = "l")
+
+pdf("arma4_acf.pdf")
 par(mfrow=c(1,2))
 
 acf(Y,main="ACF")
@@ -110,10 +126,14 @@ dev.off()
 ```{r}
 Y = portes::varima.sim(n=5000, model = list(ma = -0.4, sma = 0.8, period = 12))
 
-pdf("arma5.pdf")
+pdf("arma5_process.pdf")
+# expression(paste("Realisation of a ", "(0,0,1)", x, "(0,0,1)"[12], " seasonal process with ", theta[1], " = -0.8 and ", Theta[1], " = 0.8"))
+plot(Y[1:100], ylab= expression(Y[t]), xlab = "Time", main = "Realization of stochastic process", type = "l")
+
+pdf("arma5_acf.pdf")
 par(mfrow=c(1,2))
 
-acf(Y,main="ACF")
+acf(Y,main="ACF", ylim = c(-.5, .5))
 pacf(Y,main="PACF")
 
 dev.off()
@@ -125,13 +145,23 @@ dev.off()
 ```{r}
 Y = portes::varima.sim(n=5000, model = list(ma = 0.4, sar = -0.7, period = 12))
 
-pdf("arma6.pdf")
+pdf("arma6_process.pdf")
+# par(mfrow = c(3,1))
+# expression(paste("Realisation of a ", "(0,0,1)", x, "(1,0,0)"[12], " seasonal process \n with ", theta[1], " = 0.4 and ", Phi[1], "=-0.7"))
+plot(Y[1:100], ylab= expression(Y[t]), xlab = "Time", main = "Realization of stochastic process", type = "l")
+
+pdf("arma6_acf.pdf")
 par(mfrow=c(1,2))
 
 acf(Y,main="ACF")
 pacf(Y,main="PACF")
 
 
-# ggsave(file="arma6.pdf", plot=p, width=5, height=4)
 dev.off()
 ```
+
+
+```{r}
+Y[1:1000]
+```
+
