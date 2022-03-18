@@ -31,8 +31,12 @@ library(xtable)
 # Question 2.3
 ```{r}
 
+pdf("question23_1.pdf", width=5, height=7)
+
 jColors <- c('chartreuse3', 'cornflowerblue', 'darkgoldenrod1', 'peachpuff3',
              'mediumorchid3', 'turquoise3', 'wheat4', 'darkgreen','black','red')
+sd <- 1
+n <- 1000
 
 t=seq(0,1000,1)
 y1 <- qnorm(0.975,mean=exp(2),sd=sqrt(0:n)*sd)
@@ -69,8 +73,8 @@ for (j in (1:m)){
 legend("bottomright", inset=.02,
        "95% conf. interval", fill=rgb(0, 0, 1,0.25), horiz=TRUE, cex=0.8)
 
-
-
+dev.off()
+pdf("question23_2.pdf", width=5, height=7)
 
 plot(c(0,n),c(0,0),type='l',ylim=c(-0.5,1),xlim=c(0,100), xlab='lag',ylab='ACF')
 grid()
@@ -81,8 +85,31 @@ for (i in (1:m)){
   lines(acf(Y[,i],lag.max=100,plot=FALSE)$acf,col=jColors[i])
 }
 
+dev.off()
+pdf("question23_3.pdf", width=5, height=7)
+
+plot(c(0,n),c(0,0),type='l',ylim=c(-0.5,1),xlim=c(0,100), xlab='lag',ylab='PACF')
+grid()
+abline(h=0)
+abline(h=qnorm((1 + 0.95)/2)/sqrt(n),col='blue',lty=2)
+abline(h=-qnorm((1 + 0.95)/2)/sqrt(n),col='blue',lty=2)
+for (i in (1:m)){
+  lines(pacf(Y[,i],lag.max=100,plot=FALSE)$acf,col=jColors[i])
+}
+
+dev.off()
 
 ```
+
+
+```{r}
+pacf(Y[,i])
+acf(Y[,i])
+```
+
+
+
+
 # Question 2.4
 (mixed) seasonal model (p, 0, q)×(P, 0, Q)
 ```{r}
