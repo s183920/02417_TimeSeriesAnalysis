@@ -28,7 +28,61 @@ df
 library(xtable)
 ```
 
+# Question 2.3
+```{r}
 
+jColors <- c('chartreuse3', 'cornflowerblue', 'darkgoldenrod1', 'peachpuff3',
+             'mediumorchid3', 'turquoise3', 'wheat4', 'darkgreen','black','red')
+
+t=seq(0,1000,1)
+y1 <- qnorm(0.975,mean=exp(2),sd=sqrt(0:n)*sd)
+y2 <- qnorm(0.025,mean=exp(2),sd=sqrt(0:n)*sd)
+
+# Lines
+plot(t, y1, type = "l",
+     ylim = c(-100, 100), ylab = "y",col = 4)
+grid()
+
+# Fill area between lines
+polygon(c(t, rev(t)), c(y2, rev(y1)),
+        col = rgb(0, 0, 1,0.25), lty = 0)
+
+# Redraw the lines
+lines(t, y1, col = rgb(0, 0, 1,1), lwd = 1)
+lines(t, y2, col = rgb(0, 0, 1,1), lwd = 1)
+lines(c(0,1000), c(exp(2),exp(2)), type = "l", col = 1,lwd = 1)
+
+set.seed(5)
+n=1000
+m=10
+sd=1
+Y=matrix(0,ncol=m,nrow=n)
+Y[1,]=exp(2)
+
+for (j in (1:m)){
+  e=rnorm(n,mean=0,sd=sd)
+  for (i in 2:n){ 
+    Y[i,j]=Y[i-1,j] + e[i]
+  }
+  lines(Y[,j],col=jColors[j])
+}
+legend("bottomright", inset=.02,
+       "95% conf. interval", fill=rgb(0, 0, 1,0.25), horiz=TRUE, cex=0.8)
+
+
+
+
+plot(c(0,n),c(0,0),type='l',ylim=c(-0.5,1),xlim=c(0,100), xlab='lag',ylab='ACF')
+grid()
+abline(h=0)
+abline(h=qnorm((1 + 0.95)/2)/sqrt(n),col='blue',lty=2)
+abline(h=-qnorm((1 + 0.95)/2)/sqrt(n),col='blue',lty=2)
+for (i in (1:m)){
+  lines(acf(Y[,i],lag.max=100,plot=FALSE)$acf,col=jColors[i])
+}
+
+
+```
 # Question 2.4
 (mixed) seasonal model (p, 0, q)×(P, 0, Q)
 ```{r}
@@ -48,39 +102,40 @@ pacf(sim1,lag.max = 50, main=NA, panel.first = abline(v=c(12*(1:(200/12))),lty=2
 
 
 ### Model 1: AR(1)
-
 ```{r}
+
 Y = portes::varima.sim(n=5000, model = list(ar = -0.8, period = 12))
+par(mar=c(4,4,1,1))
 
-pdf("arma1_process.pdf")
-# expression(paste("Realisation of a ", "(1,0,0)", x, "(0,0,0)"[12], " seasonal process with ", phi[1], " = -0.8"))
-plot(Y[1:100], ylab= expression(Y[t]), xlab = "Time", main = "Realization of stochastic process", type = "l")
-
-pdf("arma1_acf.pdf")
-par(mfrow=c(1,2))
-
-acf(Y,main="ACF")
-pacf(Y,main="PACF", ylim = c(0.1, -0.1))
-
+pdf("arma1_process1.pdf", width=5, height=7)
+plot(Y[1:500], ylab= expression(Y[t]), xlab = "Time", type = "l")
 dev.off()
+
+pdf("arma1_acf1.pdf", width=5, height=7)
+acf(Y,main='')
+dev.off()
+
+pdf("arma1_pacf1.pdf", width=5, height=7)
+pacf(Y, main='')
+dev.off()
+
 ```
-
-
-### Model 2: seasonal AR(1)
-
+###Model 2: seasonal AR(1)
 ```{r}
+
 Y = portes::varima.sim(n=5000, model = list(sar = 0.8, period = 12))
+par(mar=c(4,4,1,1))
 
-pdf("arma2_process.pdf")
-# expression(paste("Realisation of a ", "(0,0,0)", x, "(1,0,0)"[12], " seasonal process with ", Phi[1], " = 0.8"))
-plot(Y[1:100], ylab= expression(Y[t]), xlab = "Time", main = "Realization of stochastic process", type = "l")
+pdf("arma2_process1.pdf", width=5, height=7)
+plot(Y[1:500], ylab= expression(Y[t]), xlab = "Time", type = "l")
+dev.off()
 
-pdf("arma2_acf.pdf")
-par(mfrow=c(1,2))
+pdf("arma2_acf1.pdf", width=5, height=7)
+acf(Y,main='')
+dev.off()
 
-acf(Y,main="ACF")
-pacf(Y,main="PACF")
-
+pdf("arma2_pacf1.pdf", width=5, height=7)
+pacf(Y, main='')
 dev.off()
 ```
 
@@ -89,54 +144,56 @@ dev.off()
 
 ```{r}
 Y = portes::varima.sim(n=5000, model = list(ar = -0.9, sma = 0.7, period = 12))
+par(mar=c(4,4,1,1))
 
-pdf("arma3_process.pdf")
-# expression(paste("Realisation of a ", "(1,0,0)", x, "(0,0,1)"[12], " seasonal process with ", phi[1], " = -0.9 and ", Theta[1], " = 0.7"))
-plot(Y[1:100], ylab= expression(Y[t]), xlab = "Time", main = "Realization of stochastic process", type = "l")
-
-pdf("arma3_acf.pdf")
-par(mfrow=c(1,2))
-
-acf(Y,main="ACF")
-pacf(Y,main="PACF", ylim = c(-0.5, 0.2))
-
+pdf("arma3_process1.pdf", width=5, height=7)
+plot(Y[1:500], ylab= expression(Y[t]), xlab = "Time", type = "l")
 dev.off()
+
+pdf("arma3_acf1.pdf", width=5, height=7)
+acf(Y,main='')
+dev.off()
+
+pdf("arma3_pacf1.pdf", width=5, height=7)
+pacf(Y, main='')
+dev.off()
+
 ```
 
 ### Model 4: AR(1) and seasonal AR(1) 
 
 ```{r}
 Y = portes::varima.sim(n=5000, model = list(ar = 0.6, sar = 0.8, period = 12))
-
-pdf("arma4_process.pdf")
-#  expression(paste("Realisation of a ", "(1,0,0)", x, "(1,0,0)"[12], " seasonal process with ", phi[1], " = 0.6 and ", Phi[1], " = 0.8"))
-plot(Y[1:100], ylab= expression(Y[t]), xlab = "Time", main = "Realization of stochastic process", type = "l")
-
-pdf("arma4_acf.pdf")
-par(mfrow=c(1,2))
-
-acf(Y,main="ACF")
-pacf(Y,main="PACF")
-
+pdf("arma4_process1.pdf", width=5, height=7)
+plot(Y[1:500], ylab= expression(Y[t]), xlab = "Time", type = "l")
 dev.off()
+
+pdf("arma4_acf1.pdf", width=5, height=7)
+acf(Y,main='')
+dev.off()
+
+pdf("arma4_pacf1.pdf", width=5, height=7)
+pacf(Y, main='')
+dev.off()
+
 ```
 
 ### Model 5: MA(1) and seasonal MA(1)
 
 ```{r}
 Y = portes::varima.sim(n=5000, model = list(ma = -0.4, sma = 0.8, period = 12))
-
-pdf("arma5_process.pdf")
-# expression(paste("Realisation of a ", "(0,0,1)", x, "(0,0,1)"[12], " seasonal process with ", theta[1], " = -0.8 and ", Theta[1], " = 0.8"))
-plot(Y[1:100], ylab= expression(Y[t]), xlab = "Time", main = "Realization of stochastic process", type = "l")
-
-pdf("arma5_acf.pdf")
-par(mfrow=c(1,2))
-
-acf(Y,main="ACF", ylim = c(-.5, .5))
-pacf(Y,main="PACF")
-
+pdf("arma5_process1.pdf", width=5, height=7)
+plot(Y[1:500], ylab= expression(Y[t]), xlab = "Time", type = "l")
 dev.off()
+
+pdf("arma5_acf1.pdf", width=5, height=7)
+acf(Y,main='')
+dev.off()
+
+pdf("arma5_pacf1.pdf", width=5, height=7)
+pacf(Y, main='')
+dev.off()
+
 ```
 
 
@@ -145,18 +202,16 @@ dev.off()
 ```{r}
 Y = portes::varima.sim(n=5000, model = list(ma = 0.4, sar = -0.7, period = 12))
 
-pdf("arma6_process.pdf")
-# par(mfrow = c(3,1))
-# expression(paste("Realisation of a ", "(0,0,1)", x, "(1,0,0)"[12], " seasonal process \n with ", theta[1], " = 0.4 and ", Phi[1], "=-0.7"))
-plot(Y[1:100], ylab= expression(Y[t]), xlab = "Time", main = "Realization of stochastic process", type = "l")
+pdf("arma6_process1.pdf", width=5, height=7)
+plot(Y[1:500], ylab= expression(Y[t]), xlab = "Time", type = "l")
+dev.off()
 
-pdf("arma6_acf.pdf")
-par(mfrow=c(1,2))
+pdf("arma6_acf1.pdf", width=5, height=7)
+acf(Y,main='')
+dev.off()
 
-acf(Y,main="ACF")
-pacf(Y,main="PACF")
-
-
+pdf("arma6_pacf1.pdf", width=5, height=7)
+pacf(Y, main='')
 dev.off()
 ```
 
