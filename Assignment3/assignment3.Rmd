@@ -1,0 +1,32 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(ggplot2)
+setwd("/Users/joergensen/Documents/DTU_Mat_Tek/4.semester/02417_TimeSeriesAnalysis/Assignment_3_Laws")
+data <- read.csv(file = 'DataAssignment3.csv')
+parti_color=data$Government
+parti_color[data$Government=="Social Democrats"]='#b02424'
+parti_color[data$Government=="Venstre"]='#304c74'
+parti_color[data$Government=="Conservative"]='#90a424'
+parti_color[data$Government=="Social Liberals"]='green'
+parti_color[data$Government=="Independent"]='yellow'
+head(data)
+```
+```{r}
+plot = ggplot()+geom_point(data=data, aes(x=Date,y=NumberWords))+
+       geom_rect(data=data,aes(xmin = Date, xmax = Date+1,
+                 ymin = -Inf, ymax = Inf,fill=Government),alpha=0.55)+
+       geom_point(data=data, aes(x=Date,y=NumberWords))+
+       geom_line(data=data, aes(x=Date,y=NumberWords))
+plot
+
+```
+
+```{r}
+1919:5:2020
+```
+
+
