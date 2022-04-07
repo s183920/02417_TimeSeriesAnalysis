@@ -1,0 +1,187 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(ggplot2)
+library(magrittr)
+library(tidyverse)
+library(marima)
+```
+
+# Read data
+
+```{r}
+data <- read.csv(file = 'DataAssignment3.csv')
+head(data)
+```
+
+
+
+## Plot data
+
+```{r}
+(plot1 <- ggplot(data = data)+
+  geom_point(aes(x=Date,y=NumberWords))+
+  geom_rect(data=data,aes(xmin = Date, xmax = Date+1,
+                 ymin = -Inf, ymax = Inf,fill=Government),alpha=0.55)+
+  geom_point(aes(x=Date,y=NumberWords))+
+  geom_line(aes(x=Date,y=NumberWords)))
+
+```
+
+
+## Transform data
+
+Use log and second order differencing on NumberWords to get transformed column NumberWordsTrans
+
+```{r}
+diff_order <- 2
+
+data1 <- data %>%
+  mutate(NumberWordsTrans = data %>% .$NumberWords %>% log() %>%  diff(differences = diff_order) %>% c(rep(NA, diff_order), .)) %>% 
+  mutate(Conservative = ifelse(Government == "Conservative", 1,0)) %>% 
+  mutate(Independent = ifelse(Government == "Independent", 1,0)) %>%
+  mutate("Social Democrats" = ifelse(Government == "Social Democrats", 1,0)) %>%
+  mutate("Social Liberals" = ifelse(Government == "Social Liberals", 1,0)) %>%
+  mutate("Venstre" = ifelse(Government == "Venstre", 1,0))
+data1
+
+
+```
+
+## Plot transformed data
+
+```{r}
+(plot <- ggplot(data = data1)+
+  geom_point(aes(x=Date,y=NumberWordsTrans))+
+  geom_rect(data=data,aes(xmin = Date, xmax = Date+1,
+                 ymin = -Inf, ymax = Inf,fill=Government),alpha=0.55)+
+  geom_point(aes(x=Date,y=NumberWordsTrans))+
+  geom_line(aes(x=Date,y=NumberWordsTrans)))
+```
+
+
+# MARIMA
+
+Fit MARIMA model and forecast
+
+## Own differencing
+
+### Fit model
+
+```{r}
+ar = c(1)
+ma = c(1)
+data2 <- data1[, c(1:2, 4:9)] # manually remove government column
+
+Model1 <- define.model(kvar = ncol(data2), rem.var = c(1,2), ma=ma, ar = ar, reg.var = c(4:8))
+Marima1 <- marima(t(data2), ar.pattern=Model1$ar.pattern, ma.pattern=Model1$ma.pattern, Plot="log.det", penalty=0)
+
+# marima_model stats
+print("MA params:")
+short.form(Marima1$ma.estimates, leading = F)
+print("MA p-values")
+Marima1$ma.pvalues
+print("AR params:")
+short.form(Marima1$ar.estimates, leading = F)
+print("AR p-values")
+Marima1$ar.pvalues
+
+
+```
+
+### Forecasting
+
+#### Add forecasting to data
+
+```{r}
+data3 <- data2 %>% 
+  mutate("forecast" = arma.forecast(data2, nstart=12, nstep=90, marima=Marima1, check = F)$forecasts[3,] ) %>% 
+  mutate("forecast_inv_trans" = 
+           forecast %>% 
+           diffinv(differences = 2, xi = log(data2$NumberWords[1:2])) %>% 
+           exp() %>% .[1:102]) %>% 
+  mutate(pred_var = c(rep(0, 12), forecasts$pred.var[8,8,])) %>% 
+  mutate("forecast_inv_trans_lower" = 
+           (forecast - sqrt(pred_var)*1.96) %>% 
+           diffinv(differences = 2, xi = log(data2$NumberWords[1:2])) %>% 
+           exp() %>% .[1:102]) %>% 
+  mutate("forecast_inv_trans_upper" = 
+           (forecast + sqrt(pred_var)*1.96) %>% 
+           diffinv(differences = 2, xi = log(data2$NumberWords[1:2])) %>% 
+           exp() %>% 
+           .[1:102]) %>%  # got vector of length 104, which is strange
+  mutate("residuals" = NumberWords-forecast_inv_trans) %>% 
+  mutate("trans_residuals")
+
+data3
+```
+
+
+#### Plot forecast
+
+```{r}
+(plot <- ggplot(data = data3)+
+  geom_point(aes(x=Date,y=NumberWords))+
+  geom_rect(data=data,aes(xmin = Date, xmax = Date+1,
+                 ymin = -Inf, ymax = Inf,fill=Government),alpha=0.55)+
+  geom_point(aes(x=Date,y=NumberWords))+
+  geom_line(aes(x=Date,y=NumberWords)) +
+  geom_point(aes(x = Date, y = forecast_inv_trans), shape = 2)
+  # geom_point(aes(x = Date, y = forecast_inv_trans_lower), shape = 2) + # lower prediction interval
+  # geom_point(aes(x = Date, y = forecast_inv_trans_upper), shape = 2) # upper prediction interval
+  )
+```
+
+
+## Differencing with define.dif
+
+
+```{r}
+data4 <- data2[-3]
+data4["LogNumberWords"] <- log(data4$NumberWords)
+differences <- matrix(c(8,1,8,1), nrow = 2)
+dy <- define.dif(t(data4), differences)
+
+ar <- c(1)
+ma = c(1)
+Model2 <- define.model(kvar = ncol(data4), rem.var = c(1,2), ma=ma, ar = ar, reg.var = c(3:7))
+Marima2 <- marima(t(data2), ar.pattern=Model2$ar.pattern, ma.pattern=Model2$ma.pattern, Plot="log.det", penalty=.5)
+
+# marima_model
+print("MA params:")
+short.form(Marima2$ma.estimates, leading = F)
+print("MA p-values")
+Marima2$ma.pvalues
+print("AR params:")
+short.form(Marima2$ar.estimates, leading = F)
+print("AR p-values")
+Marima2$ar.pvalues
+
+```
+
+
+
+### Forecasting
+
+#### Add forecast to data
+
+
+```{r}
+data5 <- data4 %>% 
+  mutate(forecast = arma.forecast(data2, marima = Marima2, nstart = 12, nstep = 90, dif.poly = dy$dif.poly)$forecasts[8,]) %>% 
+  mutate(forecast_invtrans = forecast %>% exp())
+
+data5
+```
+
+plot forecast
+
+```{r}
+(plot1 + 
+   geom_point(data = data5, aes(x = Date, y = forecast_invtrans), shape = 2)
+   )
+```
+
