@@ -23,6 +23,8 @@ parti_color[data$Government=="Independent"]='yellow'
 head(data)
 ```
 
+
+
 ## Plot data
 
 ```{r}
@@ -43,15 +45,15 @@ head(data)
 ```{r}
 diff_order <- 2
 
-data2 <- data %>%
+data <- data %>%
   mutate(NumberWordsTrans = data %>% .$NumberWords %>% log() %>%  diff(differences = diff_order) %>% c(rep(NA, diff_order), .)) %>% 
   # caret::dummyVars()
-  mutate(Conservative = Government == "Conservative" %>% replace(TRUE, 1) %>% replace(FALSE, 0)) %>%
-  mutate(Independent = Government == "Independent") %>%
-  mutate("Social Democrates" = Government == "Social Democrats") %>%
-  mutate("Social Liberals" = Government == "Social Liberals") %>%
-  mutate(Venstre = Government == "Venstre") 
-data2
+  mutate(Conservative = ifelse(Government == "Conservative", 1,0)) %>% #replace(TRUE, 1) %>% replace(FALSE, 0)) %>%
+  mutate(Independent = ifelse(Government == "Independent", 1,0)) %>%
+  mutate("Social Democrates" = ifelse(Government == "Social Democrats", 1,0)) %>%
+  mutate("Social Liberals" = ifelse(Government == "Social Liberals", 1,0)) %>%
+  mutate("Venstre" = ifelse(Government == "Venstre", 1,0))
+data
 
 # data$Government == "Conservative" %>% as.vector() %>% as.logical() %>%  as.integer()
   # sapply(FUN = as.integer)
@@ -77,11 +79,10 @@ data %>%
 ```
 
 
+# ARIMA
 
 ```{r}
-data
-# one-hot encode data
-
+data %>% .$NumberWordsTrans %>% arima(c(0,0,1))
 ```
 
 
@@ -89,13 +90,20 @@ data
 # MARIMA
 
 ```{r}
-model = marima::define.model(kvar = ncol(data), ar=0, ma=1, rem.var=c(1:3), reg.var = c(5:9), indep=NULL)
+model <- marima::define.model(kvar = ncol(data), ar=0, ma=1, rem.var=c(1:3), reg.var = c(5:9), indep=NULL)
 marima::marima(t(data), ar.pattern=model$ar.pattern, ma.pattern=model$ma.pattern)
 ```
 
 ```{r}
-# optimal marima parameters for data
+ar = c(0,1)
+ma = c(0,1)
+data2 <- data[3:nrow(data), 4:9]
+model <- marima::define.model(kvar = ncol(data2), ma=ma, ar = ar, reg.var = c(2:6))
+marima_model <- marima::marima(t(data2), ar.pattern=model$ar.pattern, ma.pattern=model$ma.pattern, Plot="log.det", penalty=.5, means = 1)
 
+marima_model
+# marima::short.form(marima_model$ma.estimates, leading = F)
+# marima::short.form(marima_model$ar.estimates, leading = F)
 ```
 
 
