@@ -98,25 +98,29 @@ Marima1$ar.pvalues
 
 ```{r}
 data3 <- data2 %>% 
-  mutate("forecast" = arma.forecast(data2, nstart=12, nstep=90, marima=Marima1, check = F)$forecasts[3,] ) %>% 
+  mutate("forecast" = arma.forecast(data2, nstart=92, nstep=10, marima=Marima1, check = F)$forecasts[3,] ) %>% 
   mutate("forecast_inv_trans" = 
-           forecast %>% 
+           forecast[3:102] %>% # first two are used for diffinv conditions
            diffinv(differences = 2, xi = log(data2$NumberWords[1:2])) %>% 
-           exp() %>% .[1:102]) %>% 
+           exp()) %>% 
   mutate(pred_var = c(rep(0, 12), forecasts$pred.var[8,8,])) %>% 
   mutate("forecast_inv_trans_lower" = 
-           (forecast - sqrt(pred_var)*1.96) %>% 
+           (forecast - sqrt(pred_var)*1.96)[3:102] %>% 
            diffinv(differences = 2, xi = log(data2$NumberWords[1:2])) %>% 
-           exp() %>% .[1:102]) %>% 
+           exp()) %>% 
   mutate("forecast_inv_trans_upper" = 
-           (forecast + sqrt(pred_var)*1.96) %>% 
+           (forecast + sqrt(pred_var)*1.96)[3:102] %>% 
            diffinv(differences = 2, xi = log(data2$NumberWords[1:2])) %>% 
-           exp() %>% 
-           .[1:102]) %>%  # got vector of length 104, which is strange
-  mutate("residuals" = NumberWords-forecast_inv_trans) %>% 
-  mutate("trans_residuals")
+           exp()) %>%  # got vector of length 104, which is strange
+  mutate("residuals" = NumberWords-forecast_inv_trans) 
+  # mutate("restore_org" = 
+  #         NumberWordsTrans[3:102] %>% 
+  #          diffinv(differences = 2, xi = log(data2$NumberWords[1:2])) %>% 
+  #          exp())
+  # select(NumberWords, restore_org, NumberWordsTrans)
 
 data3
+
 ```
 
 
