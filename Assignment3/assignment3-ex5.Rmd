@@ -8,6 +8,7 @@ library(ggplot2)
 library(magrittr)
 library(tidyverse)
 library(marima)
+library(stats)
 ```
 
 # Read data
@@ -25,7 +26,7 @@ head(data)
 (plot1 <- ggplot(data = data)+
   geom_point(aes(x=Date,y=NumberWords))+
   geom_rect(data=data,aes(xmin = Date, xmax = Date+1,
-                 ymin = -Inf, ymax = Inf,fill=Government),alpha=0.55)+
+                 ymin = -Inf, ymax = Inf ,fill=Government),alpha=0.55)+
   geom_point(aes(x=Date,y=NumberWords))+
   geom_line(aes(x=Date,y=NumberWords)))
 
@@ -92,6 +93,7 @@ Marima1$ar.pvalues
 
 ```
 
+
 ### Forecasting
 
 #### Add forecasting to data
@@ -111,7 +113,7 @@ data3 <- data2 %>%
   mutate("forecast_inv_trans_upper" = 
            (forecast + sqrt(pred_var)*1.96)[3:102] %>% 
            diffinv(differences = 2, xi = log(data2$NumberWords[1:2])) %>% 
-           exp()) %>%  # got vector of length 104, which is strange
+           exp()) %>% 
   mutate("residuals" = NumberWords-forecast_inv_trans) 
   # mutate("restore_org" = 
   #         NumberWordsTrans[3:102] %>% 
@@ -188,4 +190,171 @@ plot forecast
    geom_point(data = data5, aes(x = Date, y = forecast_invtrans), shape = 2)
    )
 ```
+
+# With functions
+
+
+```{r}
+data <- read.csv(file = 'DataAssignment3.csv')
+```
+
+```{r echo=TRUE}
+trans <- function(data, diff_order = 2, trns = 1){  # data is a column
+  if (trns == 1){
+    data %>% log() %>%  diff(differences = diff_order) %>% c(rep(NA, diff_order), .)
+  } else if (trns == 2){
+    data %>%  diff(differences = diff_order) %>% log() %>% c(rep(NA, diff_order), .)
+  }
+  
+  
+}
+
+inv_trans <- function(data, org_data, diff_order = 2, trns = 1){ # data is a column
+  if (trns == 1){
+    data %>% 
+      .[(1+diff_order):length(data)] %>% 
+      diffinv(differences = diff_order, xi = log(org_data[1:diff_order])) %>% 
+      exp()
+      
+  } else if (trns == 2){
+    data %>% 
+      .[(1+diff_order):length(data)] %>% 
+      exp() %>% 
+      diffinv(differences = diff_order, xi = org_data[1:diff_order])
+  } 
+  
+}
+
+transform_data <- function(data, trns = 1, diff_order = 2){
+  data %>%
+  mutate(NumberWordsTrans = data %>% .$NumberWords %>% trans(trns = trns, diff_order = diff_order)) %>% 
+  mutate(Conservative = ifelse(Government == "Conservative", 1,0)) %>% 
+  mutate(Independent = ifelse(Government == "Independent", 1,0)) %>%
+  mutate("Social Democrats" = ifelse(Government == "Social Democrats", 1,0)) %>%
+  mutate("Social Liberals" = ifelse(Government == "Social Liberals", 1,0)) %>%
+  mutate("Venstre" = ifelse(Government == "Venstre", 1,0)) %>% 
+  select(-Government) #%>% 
+  # mutate("org" = inv_trans(.$NumberWordsTrans, .$NumberWords))
+}
+
+add_forecast <- function(data, n_start = 102, n_step = 0, ar = c(1), ma = c(1), trns = 1, diff_order = 2, future_gov = "Social Democrats"){
+  Model <- define.model(kvar = ncol(data), rem.var = c(1,2), ma=ma, ar = ar, reg.var = c(4:8))
+  Marima <- marima(t(data), means = 1, ar.pattern=Model$ar.pattern, ma.pattern=Model$ma.pattern, Plot="log.det", penalty=0)
+  
+  ("MA params:")
+  (short.form(Marima$ma.estimates, leading = F))
+  ("MA p-values")
+  (Marima$ma.pvalues)
+  ("AR params:")
+  (short.form(Marima$ar.estimates, leading = F))
+  ("AR p-values")
+  (Marima$ar.pvalues)
+  
+  
+  return(Marima)
+  
+  
+  n_future <- n_step + n_start - dim(data)[1]
+  if (n_future > 0){
+    data <- data %>% #.[dim(.)[1], ] %>% 
+      bind_rows(
+        data.frame(
+          "Date" = c(2021:(2020+n_future)),
+          "NumberWords" = NaN,
+          "NumberWordsTrans" = NaN,
+          "Conservative" = ifelse(future_gov == "Conservative", 1,0),
+          "Independent" = ifelse(future_gov == "Independent", 1,0),
+          "Social Democrats" = ifelse(future_gov == "Social Democrats", 1,0),
+          'Social Liberals' = ifelse(future_gov == "Social Liberals", 1,0),
+          "Venstre" = ifelse(future_gov == "Venstre", 1,0)
+        ) %>% 
+          rename("Social Democrats" = "Social.Democrats") %>% 
+          rename('Social Liberals' = 'Social.Liberals')
+      )
+  }
+
+  forecasts <- arma.forecast(data, nstart=n_start, nstep=n_step, marima=Marima, check = F)
+
+  data %>%
+    mutate("forecast" = forecasts$forecasts[3,] ) %>%
+    mutate("forecast_inv_trans" = inv_trans(.$forecast, .$NumberWords)) %>%
+    mutate(pred_var = c(rep(0, n_start), forecasts$pred.var[8,8,])) %>%
+    mutate("forecast_inv_trans_lower" =
+             (forecast - sqrt(pred_var)*1.96) %>%
+             inv_trans(data$NumberWords, diff_order, trns)) %>%
+    mutate("forecast_inv_trans_upper" =
+             (forecast + sqrt(pred_var)*1.96) %>%
+             inv_trans(data$NumberWords, diff_order, trns)) %>%
+    mutate("residuals" = NumberWords-forecast_inv_trans)
+}
+
+# data %>% transform_data(trns = 1) %>% mutate(org = inv_trans(NumberWordsTrans, NumberWords, trns = 1))
+data %>% transform_data() %>% add_forecast(n_start = 102, n_step = 10, ar = 1, ma = 1, diff_order = 1, trns = 1)
+```
+
+
+## Plots
+```{r}
+(plot <- data %>% transform_data() %>% add_forecast(n_start = 102, n_step = 10, ar = 1, ma = 1, diff_order = 1, trns = 1) %>%  ggplot()+
+  geom_point(aes(x=Date,y=NumberWords))+
+  geom_rect(data=data,aes(xmin = Date, xmax = Date+1,
+                 ymin = -Inf, ymax = Inf,fill=Government),alpha=0.55)+
+  geom_point(aes(x=Date,y=NumberWords))+
+  geom_line(aes(x=Date,y=NumberWords)) 
+)
+
+(plot +
+  geom_line(aes(x = Date, y = forecast_inv_trans), color = "blue") +
+  geom_line(aes(x = Date, y = forecast_inv_trans_lower), color = "red") + # lower prediction interval
+  geom_line(aes(x = Date, y = forecast_inv_trans_upper), color = "red")  # upper prediction interval
+)
+# ggplot(data = data3) + 
+#   geom_point(aes(x = Date, y = residuals))
+```
+
+
+
+
+
+
+
+
+
+```{r}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
