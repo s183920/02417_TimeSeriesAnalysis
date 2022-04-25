@@ -1,0 +1,84 @@
+---
+title: "Assignment 4"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(magrittr)
+library(ggplot2)
+library(tidyverse)
+library(stats)
+```
+
+
+# Presenting data
+
+```{r}
+data <- read.csv("A4_data.csv", sep = "\t") %>% 
+  mutate(date = as.Date(yyyymm %>% 
+                          as.character() %>% 
+                          paste0("01"), 
+                        format = "%Y%m%d"))  %>% 
+  select(-yyyymm)
+summary(data)
+head(data)
+```
+
+```{r}
+# pdf("Industries.pdf", width = 5, height = 7.5)
+
+plot_data <- data %>% 
+  # mutate('Total industry' = select(., Cnsmr,Manuf,HiTec,Hlth,Other) %>% sum()) %>% 
+  rename(Consumer = Cnsmr, Manufacturing = Manuf, "High tech" = HiTec, Healthcare = Hlth) %>% 
+  gather(Industry, "Monthly return", Consumer, Manufacturing, "High tech", Healthcare, Other) %>% #, "Total industry") %>% 
+  mutate(row = ifelse(Industry %in% c('Consumer', 'Manufacturing', "High tech"), 1, 2))
+  
+  gridExtra::grid.arrange(
+    ggplot(plot_data %>% filter(Industry %in% c('Consumer', 'Manufacturing', "High tech"))) +
+      geom_line(aes(x = date, y = `Monthly return`)) +
+      facet_grid(cols = vars(Industry), scale = "free_y"),
+    
+    ggplot(plot_data%>% filter(!(Industry %in% c('Consumer', 'Manufacturing', "High tech")))) +
+      geom_line(aes(x = date, y = `Monthly return`)) +
+      facet_grid(cols = vars(Industry), scale = "free_y"),
+    
+    nrow = 2
+  )
+  
+
+# dev.off()
+```
+
+```{r}
+plot_data %>% ggplot() +
+  geom_point(aes(date, `Monthly return`, color = Industry, shape = Industry), size = 1)
+
+plot_data %>% ggplot() +
+  geom_line(aes(date, `Monthly return`, color = Industry), alpha = .5) +
+  ylim(-20, 20)
+```
+
+
+
+```{r}
+gridExtra::grid.arrange(
+    ggplot(data) +
+      geom_line(aes(x = date, y = b.m)) +
+      ylab("Book to market ratio"),
+    
+    ggplot(data) +
+      geom_line(aes(x = date, y = ntis)) +
+      ylab("Net equity expansion"),
+    
+    ggplot(data) +
+      geom_line(aes(x = date, y = infl)) +
+      ylab("Inflation"),
+    
+    nrow = 3
+)
+```
+
+
+
+
