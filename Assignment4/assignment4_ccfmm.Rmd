@@ -105,7 +105,7 @@ text(0.25,0.5,"ACF",cex=4,font=2)
 text(0.75,0.5,"PACF",cex=4,font=2)
 
 acf(data$Cnsmr, main=NA, ylab = NA,lag.max=20, cex.lab = 3,cex.axis = 3)
-pacf(data$Cnsmr, main=NA, ylab = NA,lag.max=20 , cex.lab = 3,cex.axis = 3)
+pacf(data$Cnsmr, main=NA, ylab = NA,lag.max=20, cex.lab = 3,cex.axis = 3) 
 plot.new()
 text(0.5,0.5,"Manufactoring",cex=4,font=2)
 acf(data$Manuf, main=NA,  ylab = NA,lag.max=20, cex.lab = 3,cex.axis = 3)
@@ -122,17 +122,38 @@ plot.new()
 text(0.5,0.5,"Other",cex=4,font=2)
 acf(data$Other, main=NA, ylab = NA, lag.max=20, cex.lab = 3,cex.axis = 3)
 pacf(data$Other, main=NA,  ylab = NA, lag.max=20, cex.lab = 3,cex.axis = 3)
+
 #dev.off()
 
 ```
 ## CCF
 
+```{r}
+pnl(data[,1:5])
+```
 
 
-```{r echo=FALSE, fig.height=30, fig.width=30, warning=FALSE}
+
+
+
+```{r}
+
+M <- data[,1:5]
+pnl <- function(x, y = x) { par(new = TRUE); ccf(x, y, )}
+  #, main = sprintf("%s & %s", deparse(substitute(x)), deparse(substitute(y))) ) }
+
+pairs(M, upper.panel = pnl, diag.panel = pnl, cex.labels = 1) 
+
+
+```
+
+
+
+```{r echo=FALSE, fig.height=15, fig.width=25, warning=FALSE}
 M <- data[,1:5]
 pnl <- function(x, y = x) { par(new = TRUE); ccf(x, y)}
   #, main = sprintf("%s & %s", deparse(substitute(x)), deparse(substitute(y))) ) }
+
 pairs(as.data.frame(M), upper.panel = pnl, diag.panel = pnl, cex.labels = 1) 
 ```
 
@@ -146,17 +167,53 @@ dataplot <- data[,1:5]
 par(mfrow= c(5,5))
 p = for (i in 1:5){
     for (j in 1:5){
-    for (j in 0:4){
         ccf(dataplot[,i],dataplot[,j],  cex.title = 10)
     }
-  }
 }   
 
 
 
 ```
 
+```{r}
+plot_data <- data %>% 
+  # mutate('Total industry' = select(., Cnsmr,Manuf,HiTec,Hlth,Other) %>% sum()) %>% 
+  rename(Consumer = Cnsmr, Manufacturing = Manuf, "High tech" = HiTec, Healthcare = Hlth) %>% 
+  gather(Industry, "Monthly return", Consumer, Manufacturing, "High tech", Healthcare, Other) %>% #, "Total industry") %>% 
+  mutate(row = ifelse(Industry %in% c('Consumer', 'Manufacturing', "High tech"), 1, 2))
+  
+  gridExtra::grid.arrange(
+    ggCcf(plot_data[,1],plot_data[,2])+
+      ylab("")+ xlim(-10,10),
+    
+    ggCcf(plot_data[,1],plot_data[,3])+
+      ylab("")+ xlim(-10,10) +
+      facet_grid(cols = vars(Industry)),
 
+    nrow = 1
+  )
+```
+
+```{r}
+ggCcf(M[,1],M[,2])+
+
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(color = "orangered", alpha = .3) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
+  labs(x = "Year", y = "Temperature (°F)") +
+  facet_grid(year ~ season)
+
+```
+
+
+```{r}
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(color = "orangered", alpha = .3) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
+  labs(x = "Year", y = "Temperature (°F)") +
+  facet_grid(year ~ season)
+
+```
 
 
 
@@ -171,6 +228,8 @@ x = c(-max_lag:max_lag)
 ```
 
 ```{r}
+
+acf(as.data.frame(data[,1:5]))
 
 ```
 
@@ -201,41 +260,182 @@ ggCcf(
 ggCcf(
   x= data[,1:5],
   y = data[,1:5],
-  lag.max = 10
 )
 
-autoplot(ggCcf)
+
+```
+
+```{r}
+
+(acf(as.data.frame(data[,1:5])) %>%
+  autoplot()) + xlim(-10,10)
+
+
 ```
 
 
+```{r}
+x = acf(data[,1:5], max.lag=10)
+x
+```
+
+```{r}
+ggAcf(data[,1:5])+ xlim(-10,10)
+
+```
+
 
 ```{r, echo=FALSE,warning = FALSE, fig.height = 40 fig.width = 40}
-acf(data[,1:5], lag.max=20)  %>% 
-  autoplot() 
+ggAcf(data[,1:5])+ xlim(-10,10)
 
 ```
 
 
 ```{r}
 
-M <- matrix(sample(0:1,50,replace = TRUE),nrow = 5)
-
-
+M <- as.data.frame(data[,1:5])
 
 
 par(mfrow= c(4,4))
 for (i in 1:4){
     for (j in 1:4){
-        ccf(M[,i],M[,j])
+        ccf(M[,i],M[,j]) 
     }
-}
-
+} 
 
 
 
 ```
 
+```{r}
+ggplot(mpg) +
+  geom_point(aes(x = all_of(M[,1]), y = all_of(M[,2]))) +
+  facet_matrix(vars(Cnsmr, HiTec))
+```
 
+
+
+```{r}
+par(las = 0)
+plot(0, 0, xlim = c(0, 100),xlab = '', ylab = ' ', 
+main = "ACF")
+CCF1 <- ccf(M[,1],M[,1])
+CCF2 <- ccf(M[,1],M[,2])
+CCF3 <- ccf(M[,1],M[,3])
+CCF4 <- ccf(M[,1],M[,4])
+
+grid(nx = NULL, ny = NULL,lty = 2, col = "gray", lwd = 1)
+
+```
+
+
+
+
+```{r}
+gridExtra::grid.arrange(
+    ggplot(data) +
+      geom_line(aes(x = date, y = b.m)) +
+      ylab("Book to market ratio"),
+    
+    ggplot(data) +
+      geom_line(aes(x = date, y = ntis)) +
+      ylab("Net equity expansion"),
+    
+    ggplot(data) +
+      geom_line(aes(x = date, y = infl)) +
+      ylab("Inflation"),
+    
+    nrow = 5
+)
+```
+
+
+```{r, echo=FALSE,warning = FALSE, fig.height = 10 fig.width = 20}
+
+gridExtra::grid.arrange(
+    ggCcf(M[,1],M[,1])
+    + xlim(-10,10),
+    
+    ggCcf(M[,1],M[,2])+
+      ylab("")+ xlim(-10,10),
+    
+    ggCcf(M[,1],M[,3])+
+      ylab("")+ xlim(-10,10),
+
+    ggCcf(M[,1],M[,4])+
+      ylab("")+ xlim(-10,10),
+
+    ggCcf(M[,1],M[,5]) +
+      ylab("")+ xlim(-10,10),
+    
+    ggCcf(M[,2],M[,1])+
+      xlim(-10,10),
+    
+    ggCcf(M[,2],M[,2])+
+      ylab("") + xlim(-10,10),
+    
+    ggCcf(M[,2],M[,3])+
+      ylab("")+ xlim(-10,10),
+
+    ggCcf(M[,2],M[,4])+
+      ylab("")+ xlim(-10,10),
+
+    ggCcf(M[,2],M[,5]) +
+      ylab("")+ xlim(-10,10),
+
+    nrow = 2 
+)
+
+```
+
+```{r}
+
+df <- M
+ggplot(chic, aes(x = df, y = df)) +
+  geom_point(color = "orangered", alpha = .3) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
+  labs(x = "Year", y = "Temperature (°F)") +
+  facet_grid(df ~ df)
+```
+
+
+
+
+
+```{r}
+ggCcf() 
+```
+
+
+
+```{r}
+
+M <- as.data.frame(data[,1:5])
+
+library(gridExtra)
+
+p <- list()
+
+for (i in 1:5){
+  for (j in 1:5){
+      p[[i*5+j]] <- ggCcf(M[,i],M[,j]) 
+  }
+} 
+
+
+do.call(grid.arrange,p)
+
+```
+
+```{r}
+do.call(gridExtra::grid.arrange,p)
+
+```
+
+
+```{r}
+ggCcf(M[,1],M[,2])
+```
 
 
 
