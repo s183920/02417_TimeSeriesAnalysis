@@ -12,6 +12,14 @@ setwd("C:\\Users\\mikke\\OneDrive\\Dokumenter\\DTU documents\\8. semester (overg
 ds <- read.csv('A4_data.csv', sep='\t')
 ds$time_step <- c(1:length(ds$yyyymm))
 
+ds$Cnsmr <- ds$Cnsmr
+ds$Manuf <- ds$Manuf
+ds$HiTec <- ds$HiTec
+ds$Hlth <- ds$Hlth
+ds$Other <- ds$Other
+
+
+
 train <- head(ds, length(ds$yyyymm)-4)
 val <- tail(ds, 4)
 
@@ -19,13 +27,18 @@ head(ds)
 ```
 
 ```{r}
-ar_degree <- 1
+ar_degree <- 2
 ma_degree <- 7
 
-Model1 <- define.model(kvar=10, rem.var=c(1,7:10), indep=NULL, reg.var=NULL, ma=c(1:ma_degree))
+Model1 <- define.model(kvar=10, rem.var=c(1,7:10), indep=NULL, reg.var=NULL, ar=c(1:ar_degree))
 Marima <- marima(train, means=1, ar.pattern=Model1$ar.pattern, ma.pattern=Model1$ma.pattern, Plot="log.det", Check=FALSE, penalty=1)
 Marima
 ```
+```{r}
+rep(0,nstep)
+```
+
+
 ```{r}
 nstep = 4
 val_empty <- val
@@ -59,4 +72,25 @@ p2 <- ggplot(ds, aes(time_step, Cnsmr)) +     # Scatter plot
     
 p2
 ```
+
+
+## QQ plots on resiudals
+
+```{r}
+
+
+qqnorm(my_data$len, pch = 1, frame = FALSE)
+qqline(my_data$len, col = "steelblue", lwd = 2)
+
+
+```
+
+
+
+
+
+
+
+
+
 
