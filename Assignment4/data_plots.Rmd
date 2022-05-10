@@ -30,18 +30,20 @@ head(data)
 
 plot_data <- data %>% 
   # mutate('Total industry' = select(., Cnsmr,Manuf,HiTec,Hlth,Other) %>% sum()) %>% 
+  # mutate(Total = Cnsmr + Manuf + HiTec + Hlth + Other) %>% 
   rename(Consumer = Cnsmr, Manufacturing = Manuf, "High tech" = HiTec, Healthcare = Hlth) %>% 
   gather(Industry, "Monthly return", Consumer, Manufacturing, "High tech", Healthcare, Other) %>% #, "Total industry") %>% 
-  mutate(row = ifelse(Industry %in% c('Consumer', 'Manufacturing', "High tech"), 1, 2))
+  mutate(row = ifelse(Industry %in% c('Consumer', 'Manufacturing', "High tech"), 1, 2)) %>% 
+  group_by(date) %>% mutate(total = sum(`Monthly return`))
   
   gridExtra::grid.arrange(
     ggplot(plot_data %>% filter(Industry %in% c('Consumer', 'Manufacturing', "High tech"))) +
       geom_line(aes(x = date, y = `Monthly return`)) +
-      facet_grid(cols = vars(Industry), scale = "free_y"),
+      facet_grid(cols = vars(Industry), scale = "free"),
     
     ggplot(plot_data%>% filter(!(Industry %in% c('Consumer', 'Manufacturing', "High tech")))) +
       geom_line(aes(x = date, y = `Monthly return`)) +
-      facet_grid(cols = vars(Industry), scale = "free_y"),
+      facet_grid(cols = vars(Industry), scale = "free"),
     
     nrow = 2
   )
@@ -49,6 +51,12 @@ plot_data <- data %>%
 
 # dev.off()
 ```
+
+```{r}
+data %>% mutate(Total = Cnsmr + Manuf + HiTec + Hlth + Other) %>% ggplot()+
+  geom_line(aes(x = date, y = Total))
+```
+
 
 ```{r}
 plot_data %>% ggplot() +
@@ -79,6 +87,16 @@ gridExtra::grid.arrange(
 )
 ```
 
+```{r}
+data %>% select(Cnsmr, Manuf, HiTec, Hlth, Other) %>% mutate(total = sum())
+```
 
+
+```{r}
+# plot_data %>% group_by(date) %>% mutate(total = sum(`Monthly return`)) %>% gather("Industry", "Monthly return", )
+
+data %>% mutate(total = Cnsmr + Manuf + HiTec + Hlth + Other)
+# plot_data %>% group_by(date) %>% rbind(`Monthly return` = sum(`Monthly return`))
+```
 
 
