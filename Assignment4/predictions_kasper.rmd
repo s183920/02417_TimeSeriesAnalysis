@@ -10,6 +10,9 @@ require(forecast)
 library(magrittr)
 library(tidyverse)
 library(stats)
+library(gridExtra)
+library(grid)
+library(gridtext)
 
 setwd('/Users/joergensen/Documents/DTU_Mat_Tek/4.semester/02417_TimeSeriesAnalysis/Asignment4')
 
@@ -19,76 +22,132 @@ data <- read.csv('A4_data.csv', sep='\t')%>%
                           paste0("01"), 
                           format = "%Y%m%d"))  %>% 
             select(-yyyymm)
-
 n_test = 4
 N = length(data$date)
 n_train = N-n_test
 
 #exclude time
-train <- head(data[,1:8], n_train)
-val <- tail(data[,1:8], n_test)
+train <- head(data[,c(1:8)], n_train)
+val <- tail(data[,c(1:8)], n_test)
 
 head(data)
+
 ```
 
 ```{r}
+## FIT MODEL
+
 ar_degree <- 3
 ma_degree <- 3
 
-Model1 <- define.model(kvar=8, rem.var=c(6:8), indep=NULL, reg.var=NULL, ma=c(1:ma_degree), ar=c(1:ar_degree))
-#Model1 <- define.model(kvar=8, rem.var=NULL, indep=NULL, reg.var=c(6:8), ma=c(1:ma_degree), ar=c(1:ar_degree))
-Marima <- marima(train, means=1, ar.pattern=Model1$ar.pattern, ma.pattern=Model1$ma.pattern, Plot="log.det", Check=FALSE, penalty=1)
-Marima
+#Model1 <- define.model(kvar=8, rem.var=c(6:8), indep=NULL, reg.var=NULL, ma=c(1:ma_degree), ar=c(1:ar_degree))
+Model1 <- define.model(kvar=8, rem.var=NULL, indep=NULL, reg.var=c(6:8), ma=c(1:ma_degree), ar=c(1:ar_degree))
+Marima <- marima(train, means=1, ar.pattern=Model1$ar.pattern, ma.pattern=Model1$ma.pattern, Plot="log.det", Check=FALSE, penalty=2)
+
 ```
 
-```{r}
+```{r} 
+## MAKE FORECAST
+
 nstep = n_test
 forecast_df=rbind(train, val)
 forecast_df[(N-3):N,1:5] = 0
 
 Forecasts = arma.forecast(series = forecast_df, marima=Marima, nstart = n_train, nstep = nstep)
 
-#overwrite forecast_df with forcasted values
+#overwrite forecast_df with forecasted values
 forecast_df[,1:5]=t(Forecasts$forecasts[1:5,])
+
+pdf("checkresiduals_reg.pdf",7, 5)
+checkresiduals(forecast_df[,2])
+dev.off()
 
 ```
 
 ```{r}
+plot_prections <- function(industri, cutoff, flag1=FALSE){
+  idx = which(colnames(train)==industri)
+  
+  varians = Forecasts$pred.var
+  var = rep(diag(varians[,,1])[idx], n_train)
+  for (i in 1:4) {var = c(var, diag(varians[,,i])[idx])}
+  
+  df = data.frame(
+    time = data$date,
+    data = data[industri],
+    pred = forecast_df[industri],
+    lower = forecast_df[industri]-1.96*sqrt(var),
+    upper = forecast_df[industri]+1.96*sqrt(var)
+  )
+  colnames(df)=c('time','data','pred','lower','upper')
+  df=df[(cutoff+1):N,]
+  df_train = head(df,n_train-cutoff)
+  df_test = tail(df,n_test)
+  
+  plot <- ggplot() +     # Scatter plot
+        geom_ribbon(data=df_train, aes(x=time,ymin=lower,ymax=upper), fill="blue", alpha=0.5)+
+        geom_ribbon(data=df_test, aes(x=time,ymin=lower,ymax=upper), fill="red", alpha=0.5)+
+      geom_line(data=df, aes(time, data))+ 
+      geom_line(data = df_train,aes(time, pred), color="blue")+
+      geom_line(data = df_test,aes(time, pred), color="red")+
+    labs(x='date', y='Monthly return')+
+    theme(axis.title.y = element_blank(),
+          axis.title.x = element_blank(),
+          plot.margin = unit(c(0.2,0.2,0,0), "cm"))
+    
+  if (cutoff>0){
+    plot= plot+theme(axis.title.y = element_blank())}
+  
+  if (flag1){
+    plot= plot+theme(axis.title.x = element_blank(),
+                      axis.ticks.x = element_blank(),
+                     axis.text.x = element_blank())}
+  
+  return(plot)
+}
 
-industri = "Cnsmr"
-idx = which(colnames(train)==industri)
+#make individual plots
+cutoff=1060
+plots = list()
+for (industri in colnames(data)[1:5]){
+  flag1=T
+  flag2=T
+  if(industri=='Other'){flag1=F}
+  plots=append(plots, 
+                list(plot_prections(industri,0,flag1=flag1), 
+                     plot_prections(industri,cutoff,flag1=flag1)))
+}
 
-varians = Forecasts$pred.var
-var = rep(diag(varians[,,1])[idx], n_train)
-for (i in 1:4) {var = c(var, diag(varians[,,i])[idx])}
-
-df = data.frame(
-  time = data$date,
-  data = data[industri],
-  pred = forecast_df[industri],
-  lower = forecast_df[industri]-1.96*sqrt(var),
-  upper = forecast_df[industri]+1.96*sqrt(var)
-)
-colnames(df)=c('time','data','pred','lower','upper')
-df_train = head(df,n_train)
-df_test = tail(df,n_test)
-
-plot_Cnsmr <- ggplot() +     # Scatter plot
-      geom_ribbon(data=df_train, aes(x=time,ymin=lower,ymax=upper), fill="blue", alpha=0.5)+
-      geom_ribbon(data=df_test, aes(x=time,ymin=lower,ymax=upper), fill="blue", alpha=0.5)+
-    geom_line(data=df, aes(time, data))+ 
-    geom_line(data = df_train,aes(time, pred), color="blue")+
-    geom_line(data = df_test,aes(time, pred), color="red")+
-    labs(title=paste('Predictions for ',industri))
+#save grid of all plots
+pdf("predictions_with_reg.pdf")
+grid.arrange(grobs=plots,
+             ncol=2,nrow=5,
+             heights=1.5*c(5,5,5,5,6),
+             widths=rep(5,2),
+             bottom = textGrob("date", gp = gpar(fontsize = 14)),
+             left = textGrob("Monthly return", rot = 90, gp = gpar(fontsize = 14)))
+dev.off()
 
 
-
-plot_Cnsmr
-
-plot_Cnsmr+xlim(data$date[N-100],data$date[N])
-
+ggplot
 ```
 
+```{r}
+profit1 = sum(tail(train$Cnsmr+train$Manuf+train$HiTec+train$Hlth+train$Other,1074))/5
+profit2 = sum(tail(train$Hlth,1074))
+profit3 = 0
+for (i in 4:n_train){ 
+  x = train[i,which.max(forecast_df[i,1:5])]
+   
+  if (max(forecast_df[i,1:5])>0){profit3 = profit3 + x}
+  
+}
 
+print('profit investing 20kr each month in each industri:')
+print(profit1)
+print('profit investing 100kr each month in Hlth:')
+print(profit2)
+print('profit investing 100kr each month in the sector with predicted higest return:')
+print(profit3)
 
-
+```
